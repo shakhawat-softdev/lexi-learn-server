@@ -40,6 +40,17 @@ async function run() {
          res.send(result)
       });
 
+      //Get all APPROVED Classes for Classes Page
+      app.get('/classes/:text', async (req, res) => {
+         const text = req.params.text;
+         console.log(text)
+         if (text == 'approved') {
+            const result = await classCollection.find({ status: text }).toArray()
+            res.send(result)
+         }
+
+      })
+
       //Inset User In UserCollections
       app.post('/users', async (req, res) => {
          const userData = req.body;
@@ -54,7 +65,7 @@ async function run() {
          res.send(result)
       });
 
-      //Get all Instructor
+      //Get all Instructors for Instructor Page
       app.get('/users/:text', async (req, res) => {
          const text = req.params.text;
          console.log(text)
