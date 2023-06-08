@@ -7,6 +7,8 @@ const port = process.env.PORT || 5000;
 //middleware
 app.use(express.json());
 app.use(cors());
+const jwt = require('jsonwebtoken');
+const stripe = require('stripe')(process.env.PAYMENT_SECRET_KEY)
 
 
 
@@ -26,6 +28,24 @@ const client = new MongoClient(uri, {
    }
 });
 
+const varifyJWT = (req, res, next) => {
+   const authorization = req.headers.authorization;
+   if (!authorization) {
+      return res.status(401).send({ error: true, message: 'unaurhorize access' })
+   };
+
+   //bearer token
+   const token = authorization.split(' ')[1];
+   jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (error, decoded) => {
+      if (error) {
+         return res.status(401).send({ error: true, message: 'unaurhorize access' })
+      }
+
+      req.decoded = decoded;
+      next();
+   })
+};
+
 async function run() {
    try {
       // Connect the client to the server	(optional starting in v4.7)
@@ -33,6 +53,17 @@ async function run() {
       const classCollection = client.db("lexiLearnDB").collection("classes");
       const usersCollection = client.db("lexiLearnDB").collection("users");
       const selectedClassCollection = client.db("lexiLearnDB").collection("selected");
+      const enrolledClassCollection = client.db("lexiLearnDB").collection("enrolled");
+      const paymentHistoryCollection = client.db("lexiLearnDB").collection("payments");
+
+      //Jwt
+      app.post('/jwt', (req, res) => {
+         const user = req.body;
+         // console.log("userEmail", user)
+
+         const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' })
+         res.send({ token });
+      });
 
 
       //Get all the classes. TODO: apply filter for popular Classes
@@ -44,7 +75,7 @@ async function run() {
       //Get all APPROVED Classes for Classes Page
       app.get('/classes/:text', async (req, res) => {
          const text = req.params.text;
-         console.log(text)
+         // console.log(text)
          if (text == 'approved') {
             const result = await classCollection.find({ status: text }).toArray()
             res.send(result)
@@ -69,7 +100,7 @@ async function run() {
       //Get all Instructors for Instructor Page
       app.get('/users/:text', async (req, res) => {
          const text = req.params.text;
-         console.log(text)
+         // console.log(text)
          if (text == 'instructor') {
             const result = await usersCollection.find({ role: text }).toArray()
             res.send(result)
@@ -81,7 +112,7 @@ async function run() {
       //TODO: jwt varification is needed
       app.post('/selectedClass', async (req, res) => {
          const userClass = req.body;
-         console.log(userClass);
+         // console.log(userClass);
          const result = await selectedClassCollection.insertOne(userClass)
          res.send(result)
       });
@@ -95,11 +126,11 @@ async function run() {
 
       app.get('/selectedClass', async (req, res) => {
          const email = req.query.email;
-         console.log(email);
+         // console.log(email);
          if (!email) {
             res.send([]);
          }
-         const query = { userEmail: email };
+         const query = { studentEmail: email };
          const result = await selectedClassCollection.find(query).toArray();
          res.send(result);
       });
@@ -108,7 +139,7 @@ async function run() {
       //TODO: jwt varification is needed
       app.delete('/selectedClass/:id', async (req, res) => {
          const classID = req.params.id;
-         console.log(classID);
+         // console.log(classID);
          const query = { _id: new ObjectId(classID) }
          const result = await selectedClassCollection.deleteOne(query)
          res.send(result)
@@ -117,8 +148,9 @@ async function run() {
 
       //Create Payment-Intent
       app.post("/create-payment-intent", async (req, res) => {
-         const { price } = req.body;
-         const amount = parseInt(price * 100);
+         const { total } = req.body;
+         console.log(total);
+         const amount = parseInt(total * 100);
          const paymentIntent = await stripe.paymentIntents.create({
             amount: amount,
             currency: "usd",
@@ -126,8 +158,47 @@ async function run() {
          });
 
          res.send({ clientSecret: paymentIntent.client_secret })
+      });
+
+      /* 
+         //TODO Have to fix pamyent issue
+      */
+      //TODO Have to fix pamyent issue
+      //When Payment is successfull, Remove all Selectrd Classess and shift selected class to enrolled classes
+      app.post('/payments', async (req, res) => {
+         const { enrolledClasses, paymentHistory } = req.body;
+
+         const paymentHistoryInsetResult = await paymentHistoryCollection.insertOne(paymentHistory);
+         const enrolledClssesResult = await enrolledClassCollection.insertMany(enrolledClasses);
+         //TODO: Selected classes shouldbe delete from selected clssses
+         const query = { _id: { $in: enrolledClasses.map(item => new ObjectId(item._id)) } };
+         const deleteSelectedClassesResult = await selectedClassCollection.deleteMany(query);
+         res.send(paymentHistoryInsetResult, enrolledClssesResult, deleteSelectedClassesResult);
 
       });
+
+      //Get payment History
+      app.get('/paymentHistory', async (req, res) => {
+         const result = await paymentHistoryCollection.find().toArray()
+         res.send(result)
+      })
+
+
+
+
+      //Get all Enrolld Class from Enroll class cOllection
+      app.get('/enrolled', async (req, res) => {
+         const email = req.query.email;
+         // console.log(email);
+         if (!email) {
+            res.send([]);
+         }
+         const query = { studentEmail: email };
+         const result = await enrolledClassCollection.find(query).toArray();
+         res.send(result);
+
+      })
+
 
 
       // Send a ping to confirm a successful connection
