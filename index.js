@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config()
 const app = express();
 const port = process.env.PORT || 5000;
@@ -91,11 +91,43 @@ async function run() {
       app.get('/selectedClass', async (req, res) => {
          const result = await selectedClassCollection.find().toArray();
          res.send(result)
+      });
+
+      app.get('/selectedClass', async (req, res) => {
+         const email = req.query.email;
+         console.log(email);
+         if (!email) {
+            res.send([]);
+         }
+         const query = { userEmail: email };
+         const result = await selectedClassCollection.find(query).toArray();
+         res.send(result);
+      });
+
+      //DELETE Specifuc Clsses/Couse from Classescollection
+      //TODO: jwt varification is needed
+      app.delete('/selectedClass/:id', async (req, res) => {
+         const classID = req.params.id;
+         console.log(classID);
+         const query = { _id: new ObjectId(classID) }
+         const result = await selectedClassCollection.deleteOne(query)
+         res.send(result)
       })
 
 
+      //Create Payment-Intent
+      app.post("/create-payment-intent", async (req, res) => {
+         const { price } = req.body;
+         const amount = parseInt(price * 100);
+         const paymentIntent = await stripe.paymentIntents.create({
+            amount: amount,
+            currency: "usd",
+            "payment_method_types": ["card"],
+         });
 
+         res.send({ clientSecret: paymentIntent.client_secret })
 
+      });
 
 
       // Send a ping to confirm a successful connection
