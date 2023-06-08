@@ -77,10 +77,20 @@ async function run() {
 
       })
 
-      //Select Class ad to user Cart
-      app.post('selectedClass', async (req, res) => {
+      //Selected is Inserted to to Student class list
+      //TODO: jwt varification is needed
+      app.post('/selectedClass', async (req, res) => {
          const userClass = req.body;
+         console.log(userClass);
+         const result = await selectedClassCollection.insertOne(userClass)
+         res.send(result)
+      });
 
+      //get all the selected from collection
+      //TODO: jwt varification is needed
+      app.get('/selectedClass', async (req, res) => {
+         const result = await selectedClassCollection.find().toArray();
+         res.send(result)
       })
 
 
