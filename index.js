@@ -32,6 +32,7 @@ async function run() {
       await client.connect();
       const classCollection = client.db("lexiLearnDB").collection("classes");
       const usersCollection = client.db("lexiLearnDB").collection("users");
+      const selectedClassCollection = client.db("lexiLearnDB").collection("selected");
 
 
       //Get all the classes. TODO: apply filter for popular Classes
@@ -73,6 +74,12 @@ async function run() {
             const result = await usersCollection.find({ role: text }).toArray()
             res.send(result)
          }
+
+      })
+
+      //Select Class ad to user Cart
+      app.post('selectedClass', async (req, res) => {
+         const userClass = req.body;
 
       })
 
