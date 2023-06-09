@@ -129,7 +129,8 @@ async function run() {
          // console.log(email);
          if (!email) {
             res.send([]);
-         }
+         };
+
          const query = { studentEmail: email };
          const result = await selectedClassCollection.find(query).toArray();
          res.send(result);
@@ -197,8 +198,93 @@ async function run() {
          const result = await enrolledClassCollection.find(query).toArray();
          res.send(result);
 
-      })
+      });
 
+
+      //Instructor API
+      //ADD new Class
+      app.post('/classes', async (req, res) => {
+         const classData = req.body;
+         console.log(classData)
+         const result = await classCollection.insertOne(classData);
+         res.send(result);
+      });
+
+      //TODO: Jodi time thake tahole eta dekte hobe otherwise dorkar nai
+      // app.get('/myClasses', async (req, res) => {
+      //    const email = req.query.email;
+      //    // console.log(email);
+      //    if (!email) {
+      //       res.send([]);
+      //    };
+      //    const query = { instructorEmail: email };
+      //    const result = await classCollection.find(query).toArray();
+      //    res.send(result);
+      // });
+
+
+      // get Instructor Own Classes
+      app.get('/myClasses', async (req, res) => {
+         // console.log(req.query.email);
+         let query = {};
+         if (req.query?.email) {
+            query = { instructorEmail: req.query.email }
+         }
+         const result = await classCollection.find(query).toArray()
+         res.send(result)
+      });
+
+      /* --------------------------------------------------
+       //                  ADMIN PART
+      ----------------------------------------------------*/
+      // GET ALL THE CLASSES FROM COLLECTION
+
+      // app.get('/classes', async (req, res) => {
+      //    const result = await classCollection.find().toArray();
+      //    res.send(result)
+      // });
+
+
+
+      //SET STATUS- AS [APPROVE OR DENEIED] TAG TO CLASS FROM COLLECTION
+      app.patch('/classes/:id', async (req, res) => {
+         const id = req.params.id;
+         const filter = { _id: new ObjectId(id) }
+         const updatedBooking = req.body;
+
+         // console.log(updatedBooking);
+         const updateDoc = {
+            $set: {
+               status: updatedBooking.status
+            },
+         };
+         const result = await classCollection.updateOne(filter, updateDoc);
+         res.send(result)
+      });
+
+      // GET ALL THE USERS FROM  USERS COLLECTION
+      app.get('/users', async (req, res) => {
+         const result = await usersCollection.find().toArray();
+         res.send(result)
+      });
+
+      //SET USER ROLE AS-[ADMIN OR INSTRUCTOR] TAG TO USER TO COLLECTION
+      app.patch('/users/:id', async (req, res) => {
+         const id = req.params.id;
+         console.log(id)
+         const filter = { _id: new ObjectId(id) }
+         const updatedBooking = req.body;
+
+         console.log(updatedBooking);
+
+         const updateDoc = {
+            $set: {
+               role: updatedBooking.role
+            },
+         };
+         const result = await usersCollection.updateOne(filter, updateDoc);
+         res.send(result)
+      });
 
 
       // Send a ping to confirm a successful connection
