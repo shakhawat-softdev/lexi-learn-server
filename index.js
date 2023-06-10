@@ -70,16 +70,34 @@ async function run() {
       -----------------------------------------------------*/
       app.get('/users/admin/:email', verifyJWT, async (req, res) => {
          const email = req.params.email;
-         console.log("email", email)
+         // console.log("email", email)
 
          if (req.decoded.email !== email) {
             res.send({ admin: false })
          }
-         const query = { userEmail: email }
 
+         const query = { userEmail: email }
          const user = await usersCollection.findOne(query);
-         console.log("users", user)
+         // console.log("users", user)
          const result = { admin: user?.role === 'admin' }
+         res.send(result);
+      });
+
+      /*--------------------------------------------------- 
+                      verify Instructor route
+      -----------------------------------------------------*/
+      app.get('/users/instructor/:email', verifyJWT, async (req, res) => {
+         const email = req.params.email;
+         // console.log("email", email)
+
+         if (req.decoded.email !== email) {
+            res.send({ instructor: false })
+         }
+
+         const query = { userEmail: email }
+         const user = await usersCollection.findOne(query);
+         // console.log("users", user)
+         const result = { instructor: user?.role === 'instructor' }
          res.send(result);
       });
 
