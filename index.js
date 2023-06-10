@@ -28,7 +28,7 @@ const client = new MongoClient(uri, {
    }
 });
 
-const varifyJWT = (req, res, next) => {
+const verifyJWT = (req, res, next) => {
    const authorization = req.headers.authorization;
    if (!authorization) {
       return res.status(401).send({ error: true, message: 'unaurhorize access' })
@@ -65,18 +65,40 @@ async function run() {
          res.send({ token });
       });
 
+      /*--------------------------------------------------- 
+                      verify admin route
+      -----------------------------------------------------*/
+      app.get('/users/admin/:email', verifyJWT, async (req, res) => {
+         const email = req.params.email;
+         console.log("email", email)
+
+         if (req.decoded.email !== email) {
+            res.send({ admin: false })
+         }
+         const query = { userEmail: email }
+
+         const user = await usersCollection.findOne(query);
+         console.log("users", user)
+         const result = { admin: user?.role === 'admin' }
+         res.send(result);
+      });
+
+
+
+
+      /* FOR HOME PAGE    Popular Classes Section API */
       /*---------------------------------
             (Top-Six Class)
-            Popular Classes Section API 
             Have the top 6 classes based on the number of students.
       ----------------------------------- */
       app.get('/classes', async (req, res) => {
          const result = await classCollection.find().sort({ enrolled: -1 }).limit(6).toArray()
          res.send(result)
       });
+
+      /* HOME PAGE Popular INSTRUCTOR Section API  */
       /*---------------------------------
             (Top-Six Instructoe)
-            Popular Classes Section API 
             Have the top 6 classes based on the number of students.
       ----------------------------------- */
       app.get('/instructors', async (req, res) => {
@@ -85,20 +107,24 @@ async function run() {
       });
 
 
-
-
-
-
-      //Get all APPROVED Classes for Classes Page
+      /* FOR CLASSES PAGE */
+      /*------------------------------------------
+         Get all APPROVED Classes for Classes Page
+      -------------------------------------------*/
       app.get('/classes/:text', async (req, res) => {
          const text = req.params.text;
-         // console.log(text)
          if (text == 'approved') {
             const result = await classCollection.find({ status: text }).toArray()
             res.send(result)
+         }
+         else {
+            res.send([]);
          };
 
       })
+
+
+
 
       //Inset User In UserCollections
       app.post('/users', async (req, res) => {
@@ -122,6 +148,7 @@ async function run() {
             const result = await usersCollection.find({ role: text }).toArray()
             res.send(result)
          }
+
 
       })
 
@@ -167,7 +194,7 @@ async function run() {
       //Create Payment-Intent
       app.post("/create-payment-intent", async (req, res) => {
          const { total } = req.body;
-         console.log(total);
+         // console.log(total);
          const amount = parseInt(total * 100);
          const paymentIntent = await stripe.paymentIntents.create({
             amount: amount,
