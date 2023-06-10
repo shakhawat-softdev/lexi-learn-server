@@ -65,12 +65,29 @@ async function run() {
          res.send({ token });
       });
 
-
-      //Get all the classes. TODO: apply filter for popular Classes
+      /*---------------------------------
+            (Top-Six Class)
+            Popular Classes Section API 
+            Have the top 6 classes based on the number of students.
+      ----------------------------------- */
       app.get('/classes', async (req, res) => {
-         const result = await classCollection.find().toArray();
+         const result = await classCollection.find().sort({ enrolled: -1 }).limit(6).toArray()
          res.send(result)
       });
+      /*---------------------------------
+            (Top-Six Instructoe)
+            Popular Classes Section API 
+            Have the top 6 classes based on the number of students.
+      ----------------------------------- */
+      app.get('/instructors', async (req, res) => {
+         const result = await classCollection.find().sort({ enrolled: -1 }).limit(6).toArray()
+         res.send(result)
+      });
+
+
+
+
+
 
       //Get all APPROVED Classes for Classes Page
       app.get('/classes/:text', async (req, res) => {
@@ -79,7 +96,7 @@ async function run() {
          if (text == 'approved') {
             const result = await classCollection.find({ status: text }).toArray()
             res.send(result)
-         }
+         };
 
       })
 
@@ -296,12 +313,6 @@ async function run() {
    }
 }
 run().catch(console.dir);
-
-
-
-
-
-
 app.listen(port, () => {
    console.log(`Lexi Learn is running on ${port}`)
 })
