@@ -333,10 +333,11 @@ async function run() {
       ----------------------------------------------------*/
       // GET ALL THE CLASSES FROM COLLECTION
 
-      // app.get('/classes', async (req, res) => {
-      //    const result = await classCollection.find().toArray();
-      //    res.send(result)
-      // });
+      app.get('/allclasses', async (req, res) => {
+         const result = await classCollection.find().toArray();
+         // console.log(result)
+         res.send(result)
+      });
 
 
 
@@ -377,6 +378,24 @@ async function run() {
             },
          };
          const result = await usersCollection.updateOne(filter, updateDoc);
+         res.send(result)
+      });
+
+      /* ADMIN FEEDBACK */
+
+
+      app.patch('/classes/:id', async (req, res) => {
+         const id = req.params.id;
+         const filter = { _id: new ObjectId(id) }
+         const updatedBooking = req.body;
+
+         // console.log(updatedBooking);
+         const updateDoc = {
+            $set: {
+               feedBack: updatedBooking.feedBack
+            },
+         };
+         const result = await classCollection.updateOne(filter, updateDoc);
          res.send(result)
       });
 
