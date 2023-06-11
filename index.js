@@ -49,7 +49,7 @@ const verifyJWT = (req, res, next) => {
 async function run() {
    try {
       // Connect the client to the server	(optional starting in v4.7)
-      await client.connect();
+      // await client.connect();
       const classCollection = client.db("lexiLearnDB").collection("classes");
       const usersCollection = client.db("lexiLearnDB").collection("users");
       const selectedClassCollection = client.db("lexiLearnDB").collection("selected");
@@ -256,43 +256,42 @@ async function run() {
       //TODO Have to fix pamyent issue
       //When Payment is successfull, Remove all Selectrd Classess and shift selected class to enrolled classes
       app.post('/payments', async (req, res) => {
-
-         console.log('payment POST API');
-         const { enrolledClasses, paymentHistory } = req.body;
-         // const { paymentHistory } = req.body;
-
-         const paymentHistoryInsetResult = await paymentHistoryCollection.insertOne(paymentHistory);
-         const enrolledClssesResult = await enrolledClassCollection.insertMany(enrolledClasses);
-         //TODO: Selected classes shouldbe delete from selected clssses
-         const query = { _id: { $in: enrolledClasses.map(item => new ObjectId(item._id)) } };
-
-         const deleteSelectedClassesResult = await selectedClassCollection.deleteMany(query);
-         res.send(paymentHistoryInsetResult, enrolledClssesResult, deleteSelectedClassesResult);
-         // res.send(paymentHistoryInsetResult);
+         const { paymentHistory } = req.body;
+         // console.log("paymentHistory", paymentHistory);
+         const result = await paymentHistoryCollection.insertOne(paymentHistory);
+         res.send(result);
 
       });
 
       //Get payment History
       app.get('/paymentHistory', async (req, res) => {
+         // const sortedPayments = payments.sort((a, b) => new Date(b.date) - new Date(a.date));
          const result = await paymentHistoryCollection.find().toArray()
          res.send(result)
-      })
-
-
+      });
 
 
       //Get all Enrolld Class from Enroll class cOllection
       app.get('/enrolled', async (req, res) => {
          const email = req.query.email;
-         // console.log(email);
+         console.log("Student emeil", email)
          if (!email) {
             res.send([]);
          }
          const query = { studentEmail: email };
-         const result = await enrolledClassCollection.find(query).toArray();
+         const result = await enrolledClassCollection.find(query).sort({ date: 1 }).toArray();
+         res.send(result);
+      });
+
+      //AFter payment is successfull
+      app.post('/enrolled', async (req, res) => {
+         const { course } = req.body;
+         // console.log("COURSE", course);
+         const result = await enrolledClassCollection.insertOne(course);
          res.send(result);
 
       });
+
 
 
       //Instructor API
@@ -304,17 +303,6 @@ async function run() {
          res.send(result);
       });
 
-      //TODO: Jodi time thake tahole eta dekte hobe otherwise dorkar nai
-      // app.get('/myClasses', async (req, res) => {
-      //    const email = req.query.email;
-      //    // console.log(email);
-      //    if (!email) {
-      //       res.send([]);
-      //    };
-      //    const query = { instructorEmail: email };
-      //    const result = await classCollection.find(query).toArray();
-      //    res.send(result);
-      // });
 
 
       // get Instructor Own Classes
@@ -401,7 +389,7 @@ async function run() {
 
 
       // Send a ping to confirm a successful connection
-      await client.db("admin").command({ ping: 1 });
+      // await client.db("admin").command({ ping: 1 });
       console.log("Pinged your deployment. You successfully connected to MongoDB!");
    } finally {
       // Ensures that the client will close when you finish/error
