@@ -100,6 +100,23 @@ async function run() {
          const result = { instructor: user?.role === 'instructor' }
          res.send(result);
       });
+      /*--------------------------------------------------- 
+                      verify STUDENT route
+      -----------------------------------------------------*/
+      app.get('/users/student/:email', verifyJWT, async (req, res) => {
+         const email = req.params.email;
+         // console.log("email", email)
+
+         if (req.decoded.email !== email) {
+            res.send({ student: false })
+         }
+
+         const query = { userEmail: email }
+         const user = await usersCollection.findOne(query);
+         // console.log("users", user)
+         const result = { student: user?.role === 'student' }
+         res.send(result);
+      });
 
 
 
@@ -167,8 +184,7 @@ async function run() {
             res.send(result)
          }
 
-
-      })
+      });
 
       //Selected is Inserted to to Student class list
       //TODO: jwt varification is needed
@@ -181,20 +197,30 @@ async function run() {
 
       //get all the selected from collection
       //TODO: jwt varification is needed
-      app.get('/selectedClass', async (req, res) => {
-         const result = await selectedClassCollection.find().toArray();
-         res.send(result)
-      });
+
+
+      // app.get('/selectedClass', async (req, res) => {
+      //    const userEmail = req.body;
+      //    console.log("userEmail", userEmail);
+      //    const result = await selectedClassCollection.find().toArray();
+      //    res.send(result) userEmail
+
+      // });
 
       app.get('/selectedClass', async (req, res) => {
          const email = req.query.email;
-         // console.log(email);
+         // console.log("Selected class Users Email:", email);
          if (!email) {
             res.send([]);
          };
-
          const query = { studentEmail: email };
-         const result = await selectedClassCollection.find(query).toArray();
+
+         // console.log("Selected class Users Query:", query);
+
+         const result = await selectedClassCollection.find({ studentEmail: email }).toArray();
+
+         // console.log("Selected class Users Result:", result);
+
          res.send(result);
       });
 
@@ -212,8 +238,9 @@ async function run() {
       //Create Payment-Intent
       app.post("/create-payment-intent", async (req, res) => {
          const { total } = req.body;
-         // console.log(total);
          const amount = parseInt(total * 100);
+         console.log("total", amount);
+
          const paymentIntent = await stripe.paymentIntents.create({
             amount: amount,
             currency: "usd",
@@ -229,14 +256,19 @@ async function run() {
       //TODO Have to fix pamyent issue
       //When Payment is successfull, Remove all Selectrd Classess and shift selected class to enrolled classes
       app.post('/payments', async (req, res) => {
+
+         console.log('payment POST API');
          const { enrolledClasses, paymentHistory } = req.body;
+         // const { paymentHistory } = req.body;
 
          const paymentHistoryInsetResult = await paymentHistoryCollection.insertOne(paymentHistory);
          const enrolledClssesResult = await enrolledClassCollection.insertMany(enrolledClasses);
          //TODO: Selected classes shouldbe delete from selected clssses
          const query = { _id: { $in: enrolledClasses.map(item => new ObjectId(item._id)) } };
+
          const deleteSelectedClassesResult = await selectedClassCollection.deleteMany(query);
          res.send(paymentHistoryInsetResult, enrolledClssesResult, deleteSelectedClassesResult);
+         // res.send(paymentHistoryInsetResult);
 
       });
 
@@ -267,7 +299,7 @@ async function run() {
       //ADD new Class
       app.post('/classes', async (req, res) => {
          const classData = req.body;
-         console.log(classData)
+         // console.log(classData)
          const result = await classCollection.insertOne(classData);
          res.send(result);
       });
@@ -333,11 +365,11 @@ async function run() {
       //SET USER ROLE AS-[ADMIN OR INSTRUCTOR] TAG TO USER TO COLLECTION
       app.patch('/users/:id', async (req, res) => {
          const id = req.params.id;
-         console.log(id)
+         // console.log(id)
          const filter = { _id: new ObjectId(id) }
          const updatedBooking = req.body;
 
-         console.log(updatedBooking);
+         // console.log(updatedBooking);
 
          const updateDoc = {
             $set: {
