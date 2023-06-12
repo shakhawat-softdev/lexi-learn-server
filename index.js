@@ -297,11 +297,41 @@ async function run() {
       //Instructor API
       //ADD new Class
       app.post('/classes', async (req, res) => {
-         const classData = req.body;
+         const UPdatedData = req.body;
          // console.log(classData)
-         const result = await classCollection.insertOne(classData);
+         const result = await classCollection.insertOne(UPdatedData);
          res.send(result);
       });
+
+      //UPDATE EXISTING Class ----------------------------- cis id ta ber kore seta update korote hobe
+      // app.post('/classes', async (req, res) => {
+      //    const classData = req.body;
+      //    // console.log(classData)
+      //    const result = await classCollection.insertOne(classData);
+      //    res.send(result);
+      // });
+
+      app.patch('/updateClass/:id', async (req, res) => {
+         const id = req.params.id;
+         console.log("id", id)
+         const filter = { _id: new ObjectId(id) }
+         const updatedBooking = req.body;
+
+         console.log("updated data", updatedBooking);
+
+         const updateDoc = {
+            $set: {
+               status: updatedBooking.status,
+               className: updatedBooking.className,
+               classImage: updatedBooking.classImage,
+               availableSeats: updatedBooking.availableSeats,
+               price: updatedBooking.price,
+            },
+         };
+
+         const result = await classCollection.updateOne(filter, updateDoc);
+         res.send(result)
+      })
 
 
 
@@ -315,6 +345,8 @@ async function run() {
          const result = await classCollection.find(query).toArray()
          res.send(result)
       });
+
+
 
       /* --------------------------------------------------
        //                  ADMIN PART
