@@ -119,8 +119,6 @@ async function run() {
       });
 
 
-
-
       /* FOR HOME PAGE    Popular Classes Section API */
       /*---------------------------------
             (Top-Six Class)
@@ -158,9 +156,6 @@ async function run() {
 
       })
 
-
-
-
       //Inset User In UserCollections
       app.post('/users', async (req, res) => {
          const userData = req.body;
@@ -195,18 +190,6 @@ async function run() {
          res.send(result)
       });
 
-      //get all the selected from collection
-      //TODO: jwt varification is needed
-
-
-      // app.get('/selectedClass', async (req, res) => {
-      //    const userEmail = req.body;
-      //    console.log("userEmail", userEmail);
-      //    const result = await selectedClassCollection.find().toArray();
-      //    res.send(result) userEmail
-
-      // });
-
       app.get('/selectedClass', async (req, res) => {
          const email = req.query.email;
          // console.log("Selected class Users Email:", email);
@@ -239,7 +222,7 @@ async function run() {
       app.post("/create-payment-intent", async (req, res) => {
          const { total } = req.body;
          const amount = parseInt(total * 100);
-         console.log("total", amount);
+         // console.log("total", amount);
 
          const paymentIntent = await stripe.paymentIntents.create({
             amount: amount,
@@ -263,12 +246,17 @@ async function run() {
 
       });
 
-      //Get payment History
+
       app.get('/paymentHistory', async (req, res) => {
-         // const sortedPayments = payments.sort((a, b) => new Date(b.date) - new Date(a.date));
-         const result = await paymentHistoryCollection.find().toArray()
+         // console.log(req.query.email);
+         let query = {};
+         if (req.query?.email) {
+            query = { user: req.query.email }
+         }
+         const result = await paymentHistoryCollection.find(query).toArray()
          res.send(result)
       });
+
 
 
       //Get all Enrolld Class from Enroll class cOllection
@@ -304,12 +292,6 @@ async function run() {
       });
 
       //UPDATE EXISTING Class ----------------------------- cis id ta ber kore seta update korote hobe
-      // app.post('/classes', async (req, res) => {
-      //    const classData = req.body;
-      //    // console.log(classData)
-      //    const result = await classCollection.insertOne(classData);
-      //    res.send(result);
-      // });
 
       app.patch('/updateClass/:id', async (req, res) => {
          const id = req.params.id;
@@ -317,7 +299,7 @@ async function run() {
          const filter = { _id: new ObjectId(id) }
          const updatedBooking = req.body;
 
-         console.log("updated data", updatedBooking);
+         // console.log("updated data", updatedBooking);
 
          const updateDoc = {
             $set: {
